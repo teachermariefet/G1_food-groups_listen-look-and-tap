@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Food Group Challenge!</title>
+    <!-- Load Balsamiq Sans Font for Child-Friendly Readability -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ==========================================================================
+           CSS Variables & Design Tokens
+           ========================================================================== */
+        :root {
+            --font-main: 'Balsamiq Sans', cursive, sans-serif;
+            --color-primary: #FF8C42;
+            --color-primary-shadow: #D96B27;
+            --color-secondary: #4EA8DE;
+            --color-secondary-shadow: #2B7CB3;
+            --color-accent: #FFD166;
+            --color-accent-shadow: #D4A338;
+            --color-correct: #06D6A0;
+            --color-correct-shadow: #049A73;
+            --color-incorrect: #EF476F;
+            --color-incorrect-shadow: #B82548;
+            --color-text-dark: #2B2D42;
+            --color-text-light: #FFFFFF;
+            --color-card-bg: rgba(255, 255, 255, 0.94);
+            --border-radius-lg: 28px;
+            --border-radius-md: 20px;
+            --border-radius-sm: 14px;
+        }
+
+        /* ==========================================================================
+           Global Reset & SmartBoard Touch Optimization
+           ========================================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-main);
+            user-select: none; /* Prevent accidental text selection on SmartBoard */
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevent scrolling on classroom displays */
+            background-color: #FFF8E7;
+            color: var(--color-text-dark);
+        }
+
+        /* ==========================================================================
+           Main Viewport Container (16:9 Landscape Optimized)
+           ========================================================================== */
+        #app-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Screen Base Styling */
+        .screen {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2vh 3vw;
+            transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 10;
+        }
+
+        .screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.96);
+            z-index: 0;
+        }
+
+        /* ==========================================================================
+           Background Layers (Preserving Proportions Without Stretching)
+           ========================================================================== */
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: contain; /* Preserves original proportions without cropping/distortion */
+            pointer-events: none;
+        }
+
+        /* Fallback cheerful backdrop in case image aspect ratio leaves letterboxing */
+        #home-screen {
+            background: radial-gradient(circle at center, #FFF3B0 0%, #FFE082 60%, #FFCA28 100%);
+        }
+        #home-bg {
+            background-image: url('homescreen.png');
+        }
+
+        #game-screen {
+            background: radial-gradient(circle at center, #E0F7FA 0%, #B2EBF2 60%, #80DEEA 100%);
+        }
+        #game-bg {
+            background-image: url('gamescreen.png');
+        }
+
+        /* ==========================================================================
+           Top Utility Bar (Fullscreen & Audio Controls)
+           ========================================================================== */
+        #top-controls {
+            position: fixed;
+            top: 2vh;
+            right: 2vw;
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .icon-btn {
+            background-color: #FFFFFF;
+            color: var(--color-text-dark);
+            border: 3px solid #E2E8F0;
+            border-bottom-width: 6px;
+            border-radius: 50%;
+            width: clamp(50px, 5.5vh, 68px);
+            height: clamp(50px, 5.5vh, 68px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transition: transform 0.15s ease, border-bottom-width 0.15s ease;
+        }
+
+        .icon-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .icon-btn:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        .icon-btn svg {
+            width: 55%;
+            height: 55%;
+            fill: currentColor;
+        }
+
+        /* ==========================================================================
+           1. HOME SCREEN STYLES
+           ========================================================================== */
+        .home-card {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 5px solid #FFFFFF;
+            border-radius: var(--border-radius-lg);
+            padding: clamp(24px, 4vh, 48px) clamp(32px, 5vw, 72px);
+            max-width: 860px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 18px 40px rgba(43, 45, 66, 0.22);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(16px, 3vh, 30px);
+            animation: floatIn 0.6s ease-out;
+        }
+
+        .game-title {
+            font-size: clamp(2.4rem, 6vw, 4.6rem);
+            font-weight: 700;
+            color: #FF6B35;
+            text-shadow: 3px 3px 0px #FFE66D, 0 6px 15px rgba(255, 107, 53, 0.25);
+            line-height: 1.15;
+            letter-spacing: 0.5px;
+        }
+
+        .game-description {
+            font-size: clamp(1.25rem, 2.6vw, 2rem);
+            font-weight: 700;
+            color: var(--color-text-dark);
+            line-height: 1.4;
+            max-width: 680px;
+            background: #FFF9EC;
+            padding: 16px 28px;
+            border-radius: var(--border-radius-md);
+            border: 3px dashed #FFD166;
+        }
+
+        .start-btn {
+            background: linear-gradient(180deg, #06D6A0 0%, #05B889 100%);
+            color: #FFFFFF;
+            font-size: clamp(1.8rem, 3.8vw, 3rem);
+            font-weight: 700;
+            padding: clamp(16px, 2.5vh, 26px) clamp(48px, 7vw, 90px);
+            border: 4px solid #FFFFFF;
+            border-bottom: 9px solid var(--color-correct-shadow);
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 12px 25px rgba(6, 214, 160, 0.4);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            letter-spacing: 1px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 16px 32px rgba(6, 214, 160, 0.5);
+        }
+
+        .start-btn:active {
+            transform: translateY(4px) scale(0.98);
+            border-bottom-width: 3px;
+        }
+
+        /* ==========================================================================
+           2. GAME SCREEN STYLES
+           ========================================================================== */
+        #game-screen {
+            justify-content: space-between;
+            padding-top: 2vh;
+            padding-bottom: 2.5vh;
+        }
+
+        /* Top HUD: Question Counter & Score */
+        .game-hud {
+            width: 100%;
+            max-width: 1280px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-right: clamp(120px, 14vw, 170px); /* Space for top-right utility buttons */
+            z-index: 20;
+        }
+
+        .hud-badge {
+            background: var(--color-card-bg);
+            border: 4px solid #FFFFFF;
+            border-bottom: 6px solid #CBD5E1;
+            border-radius: 40px;
+            padding: clamp(10px, 1.5vh, 16px) clamp(22px, 3vw, 38px);
+            font-size: clamp(1.3rem, 2.5vw, 2.1rem);
+            font-weight: 700;
+            color: var(--color-text-dark);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hud-badge.score-badge {
+            color: #E07A00;
+            background: #FFFDF7;
+        }
+
+        .hud-badge.question-badge {
+            color: #1D6FA5;
+            background: #F7FCFF;
+        }
+
+        /* Center Gameplay Stage */
+        .game-stage {
+            flex: 1;
+            width: 100%;
+            max-width: 1280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(14px, 2.2vh, 26px);
+            margin: 1vh 0;
+        }
+
+        /* Food Showcase Card */
+        .food-card {
+            background: var(--color-card-bg);
+            border: 5px solid #FFFFFF;
+            border-radius: var(--border-radius-lg);
+            padding: clamp(16px, 2.5vh, 28px) clamp(28px, 4vw, 56px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 14px 32px rgba(43, 45, 66, 0.16);
+            min-width: clamp(280px, 38vw, 500px);
+            transition: transform 0.3s ease;
+        }
+
+        .food-image-wrapper {
+            width: clamp(150px, 24vh, 250px);
+            height: clamp(150px, 24vh, 250px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .food-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Strictly preserve original image proportions */
+            filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.12));
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .food-image.pop {
+            animation: popScale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Fallback placeholder if image file is missing during testing */
+        .missing-img-fallback {
+            display: none;
+            width: 100%;
+            height: 100%;
+            border-radius: var(--border-radius-md);
+            background: #F1F5F9;
+            border: 3px dashed #94A3B8;
+            color: #475569;
+            font-size: 1.2rem;
+            font-weight: 700;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 12px;
+        }
+
+        .food-name-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .food-name {
+            font-size: clamp(2rem, 4.2vw, 3.4rem);
+            font-weight: 700;
+            color: var(--color-text-dark);
+            letter-spacing: 0.5px;
+        }
+
+        /* Replay Pronunciation Button */
+        .speak-btn {
+            background: #FFD166;
+            color: var(--color-text-dark);
+            border: 3px solid #FFFFFF;
+            border-bottom: 5px solid var(--color-accent-shadow);
+            border-radius: 50%;
+            width: clamp(46px, 5.5vh, 62px);
+            height: clamp(46px, 5.5vh, 62px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+            transition: transform 0.15s ease;
+        }
+
+        .speak-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .speak-btn:active {
+            transform: scale(0.95) translateY(2px);
+        }
+
+        .speak-btn svg {
+            width: 56%;
+            height: 56%;
+            fill: currentColor;
+        }
+
+        /* Answer Choices Container (Side-by-side on Landscape SmartBoard) */
+        .choices-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(18px, 3vw, 40px);
+            width: 100%;
+            max-width: 1080px;
+        }
+
+        .choice-btn {
+            background: #FFFFFF;
+            color: var(--color-text-dark);
+            border: 5px solid #E2E8F0;
+            border-bottom: 10px solid #CBD5E1;
+            border-radius: var(--border-radius-lg);
+            padding: clamp(16px, 2.6vh, 30px) clamp(20px, 3vw, 36px);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 10px 24px rgba(43, 45, 66, 0.14);
+            transition: transform 0.18s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.18s ease;
+            min-height: clamp(110px, 16vh, 165px);
+        }
+
+        /* Contrasting default border tints for left/right buttons before answering */
+        .choice-btn:nth-child(1):not(:disabled) {
+            background: linear-gradient(180deg, #FFFFFF 0%, #F0F9FF 100%);
+            border-color: #7DD3FC;
+            border-bottom-color: #0284C7;
+        }
+
+        .choice-btn:nth-child(2):not(:disabled) {
+            background: linear-gradient(180deg, #FFFFFF 0%, #FFFBEB 100%);
+            border-color: #FCD34D;
+            border-bottom-color: #D97706;
+        }
+
+        .choice-btn:not(:disabled):hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 14px 28px rgba(43, 45, 66, 0.2);
+        }
+
+        .choice-btn:not(:disabled):active {
+            transform: translateY(4px) scale(0.98);
+            border-bottom-width: 4px;
+        }
+
+        .choice-btn:disabled {
+            cursor: default;
+            opacity: 0.92;
+        }
+
+        .choice-en {
+            font-size: clamp(1.6rem, 3.2vw, 2.6rem);
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        .choice-zh {
+            font-size: clamp(1.3rem, 2.4vw, 2rem);
+            font-weight: 700;
+            opacity: 0.88;
+        }
+
+        /* Feedback States for Answer Buttons */
+        .choice-btn.correct {
+            background: linear-gradient(180deg, #06D6A0 0%, #05B889 100%) !important;
+            color: #FFFFFF !important;
+            border-color: #FFFFFF !important;
+            border-bottom-color: var(--color-correct-shadow) !important;
+            opacity: 1 !important;
+            transform: scale(1.03);
+            box-shadow: 0 12px 30px rgba(6, 214, 160, 0.45);
+        }
+
+        .choice-btn.incorrect {
+            background: linear-gradient(180deg, #EF476F 0%, #D6335A 100%) !important;
+            color: #FFFFFF !important;
+            border-color: #FFFFFF !important;
+            border-bottom-color: var(--color-incorrect-shadow) !important;
+            opacity: 1 !important;
+            animation: gentleShake 0.4s ease;
+        }
+
+        .choice-btn.dimmed {
+            opacity: 0.5 !important;
+            transform: scale(0.97);
+        }
+
+        /* Bottom Feedback & Next Button Bar */
+        .feedback-bar {
+            width: 100%;
+            max-width: 1080px;
+            min-height: clamp(76px, 11vh, 104px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding: 0 10px;
+        }
+
+        .feedback-message {
+            flex: 1;
+            background: var(--color-card-bg);
+            border: 4px solid #FFFFFF;
+            border-radius: var(--border-radius-md);
+            padding: clamp(12px, 1.8vh, 20px) clamp(20px, 3vw, 34px);
+            font-size: clamp(1.4rem, 2.8vw, 2.3rem);
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+        }
+
+        .feedback-message.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .feedback-message.is-correct {
+            color: #047857;
+            border-color: #06D6A0;
+            background: #ECFDF5;
+        }
+
+        .feedback-message.is-incorrect {
+            color: #BE123C;
+            border-color: #EF476F;
+            background: #FFF1F2;
+        }
+
+        .next-btn {
+            background: linear-gradient(180deg, #FF8C42 0%, #F7721E 100%);
+            color: #FFFFFF;
+            font-size: clamp(1.5rem, 3vw, 2.4rem);
+            font-weight: 700;
+            padding: clamp(14px, 2vh, 22px) clamp(32px, 4.5vw, 56px);
+            border: 4px solid #FFFFFF;
+            border-bottom: 8px solid var(--color-primary-shadow);
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(255, 140, 66, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.15s ease, opacity 0.25s ease;
+        }
+
+        .next-btn.hidden {
+            display: none;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+        }
+
+        .next-btn:active {
+            transform: translateY(3px);
+            border-bottom-width: 3px;
+        }
+
+        /* ==========================================================================
+           3. COMPLETION MODAL / SCREEN OVERLAY
+           ========================================================================== */
+        #completion-screen {
+            background: rgba(43, 45, 66, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 50;
+        }
+
+        .completion-card {
+            background: #FFFFFF;
+            border: 6px solid #FFD166;
+            border-radius: var(--border-radius-lg);
+            padding: clamp(28px, 5vh, 54px) clamp(32px, 6vw, 80px);
+            max-width: 780px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(18px, 3vh, 30px);
+            animation: popScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .completion-title {
+            font-size: clamp(2.2rem, 5vw, 4rem);
+            font-weight: 700;
+            color: #FF6B35;
+        }
+
+        .final-score-box {
+            background: #FFF9EC;
+            border: 4px solid #FFD166;
+            border-radius: var(--border-radius-md);
+            padding: 18px 42px;
+            font-size: clamp(2rem, 4.5vw, 3.6rem);
+            font-weight: 700;
+            color: var(--color-text-dark);
+        }
+
+        .final-score-number {
+            color: #059669;
+        }
+
+        .completion-message {
+            font-size: clamp(1.4rem, 2.8vw, 2.2rem);
+            font-weight: 700;
+            color: #1D6FA5;
+        }
+
+        .play-again-btn {
+            background: linear-gradient(180deg, #4EA8DE 0%, #348CC2 100%);
+            color: #FFFFFF;
+            font-size: clamp(1.6rem, 3.4vw, 2.6rem);
+            font-weight: 700;
+            padding: clamp(16px, 2.4vh, 24px) clamp(40px, 6vw, 76px);
+            border: 4px solid #FFFFFF;
+            border-bottom: 8px solid var(--color-secondary-shadow);
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 12px 26px rgba(78, 168, 222, 0.4);
+            transition: transform 0.15s ease;
+        }
+
+        .play-again-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+        }
+
+        .play-again-btn:active {
+            transform: translateY(3px);
+            border-bottom-width: 3px;
+        }
+
+        /* ==========================================================================
+           Animations & Responsive Breakpoints
+           ========================================================================== */
+        @keyframes popScale {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes floatIn {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-5px); }
+        }
+
+        /* Portrait / Narrow Screen Adaptation */
+        @media (max-width: 680px) {
+            .choices-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .choice-btn {
+                min-height: 82px;
+                padding: 12px 18px;
+            }
+            .feedback-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .feedback-message {
+                width: 100%;
+            }
+            .next-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <!-- Top Right Utility Controls: Mute/Unmute Music & Fullscreen Toggle -->
+    <div id="top-controls">
+        <button id="music-toggle-btn" class="icon-btn" title="Toggle Background Music" aria-label="Toggle Background Music">
+            <!-- Music Note Icon -->
+            <svg id="music-icon-on" viewBox="0 0 24 24">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+            <svg id="music-icon-off" viewBox="0 0 24 24" style="display: none;">
+                <path d="M4.27 3L3 4.27l9 9v.28c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-1.73L19.73 21 21 19.73 4.27 3zM14 7h4V3h-6v5.18l2 2V7z"/>
+            </svg>
+        </button>
+
+        <button id="fullscreen-btn" class="icon-btn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
+            <!-- Fullscreen Expand Icon -->
+            <svg id="fullscreen-icon-enter" viewBox="0 0 24 24">
+                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+            </svg>
+            <!-- Fullscreen Exit Icon -->
+            <svg id="fullscreen-icon-exit" viewBox="0 0 24 24" style="display: none;">
+                <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- ======================================================================
+         SCREEN 1: HOME SCREEN
+         ====================================================================== -->
+    <section id="home-screen" class="screen" aria-label="Home Screen">
+        <div id="home-bg" class="bg-layer" role="img" aria-label="Home Screen Background"></div>
+        
+        <div class="home-card">
+            <h1 class="game-title">Food Group Challenge!</h1>
+            <p class="game-description">
+                Look at the food, listen to its name, and choose the correct food group!
+            </p>
+            <button id="start-btn" class="start-btn">
+                <span>START</span>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+            </button>
+        </div>
+    </section>
+
+    <!-- ======================================================================
+         SCREEN 2: GAME SCREEN
+         ====================================================================== -->
+    <section id="game-screen" class="screen hidden" aria-label="Game Screen">
+        <div id="game-bg" class="bg-layer" role="img" aria-label="Game Screen Background"></div>
+
+        <!-- Top HUD -->
+        <header class="game-hud">
+            <div class="hud-badge question-badge" id="question-counter">
+                Question 1/12
+            </div>
+            <div class="hud-badge score-badge" id="score-display">
+                Score: 0
+            </div>
+        </header>
+
+        <!-- Main Gameplay Area -->
+        <main class="game-stage">
+            <!-- Food Picture & Word Card -->
+            <div class="food-card">
+                <div class="food-image-wrapper">
+                    <img id="food-image" class="food-image" src="" alt="Food item">
+                    <div id="food-image-fallback" class="missing-img-fallback"></div>
+                </div>
+                <div class="food-name-row">
+                    <h2 id="food-name" class="food-name">apple</h2>
+                    <button id="replay-audio-btn" class="speak-btn" title="Listen Again" aria-label="Listen to pronunciation">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Two Food Group Answer Choices -->
+            <div class="choices-grid" id="choices-container">
+                <button class="choice-btn" id="choice-0" data-index="0">
+                    <span class="choice-en">Fruits</span>
+                    <span class="choice-zh">水果類</span>
+                </button>
+                <button class="choice-btn" id="choice-1" data-index="1">
+                    <span class="choice-en">Grains</span>
+                    <span class="choice-zh">全穀雜糧類</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- Bottom Feedback & Next Button -->
+        <footer class="feedback-bar">
+            <div id="feedback-message" class="feedback-message" role="status" aria-live="polite">
+                Excellent!
+            </div>
+            <button id="next-btn" class="next-btn hidden">
+                <span>Next</span>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+            </button>
+        </footer>
+    </section>
+
+    <!-- ======================================================================
+         SCREEN 3: COMPLETION OVERLAY
+         ====================================================================== -->
+    <section id="completion-screen" class="screen hidden" aria-label="Round Complete">
+        <div class="completion-card">
+            <h2 class="completion-title">Great Job!</h2>
+            <div class="final-score-box">
+                Final Score: <span id="final-score" class="final-score-number">12</span> / 12
+            </div>
+            <p id="completion-message" class="completion-message">
+                You are a Food Group Superstar!
+            </p>
+            <button id="play-again-btn" class="play-again-btn">
+                Play Again
+            </button>
+        </div>
+    </section>
+</div>
+
+<script>
+    /**
+     * ==========================================================================
+     * 1. GAME DATA CONFIGURATION (Easily Editable)
+     * ==========================================================================
+     */
+    const FOOD_CATEGORIES = [
+        { id: 'grains',     en: 'Grains',       zh: '全穀雜糧類' },
+        { id: 'vegetables', en: 'Vegetables',   zh: '蔬菜類' },
+        { id: 'fruits',     en: 'Fruits',       zh: '水果類' },
+        { id: 'protein',    en: 'Protein',      zh: '豆魚蛋肉類' },
+        { id: 'dairy',      en: 'Dairy',        zh: '乳品類' },
+        { id: 'oils_nuts',  en: 'Oils and Nuts', zh: '油脂與堅果種子類' }
+    ];
+
+    const FOOD_ITEMS = [
+        { name: 'apple',      image: 'apple.png',      categoryId: 'fruits' },
+        { name: 'watermelon', image: 'watermelon.png', categoryId: 'fruits' },
+        { name: 'rice',       image: 'rice.png',       categoryId: 'grains' },
+        { name: 'noodles',    image: 'noodles.png',    categoryId: 'grains' },
+        { name: 'milk',       image: 'milk.png',       categoryId: 'dairy' },
+        { name: 'yogurt',     image: 'yogurt.png',     categoryId: 'dairy' },
+        { name: 'nut',        image: 'nut.png',        categoryId: 'oils_nuts' },
+        { name: 'sesame',     image: 'sesame.png',     categoryId: 'oils_nuts' },
+        { name: 'chicken',    image: 'chicken.png',    categoryId: 'protein' },
+        { name: 'fish',       image: 'fish.png',       categoryId: 'protein' },
+        { name: 'carrot',     image: 'carrot.png',     categoryId: 'vegetables' },
+        { name: 'tomato',     image: 'tomato.png',     categoryId: 'vegetables' }
+    ];
+
+    const POSITIVE_FEEDBACK = [
+        "Excellent!",
+        "Great job!",
+        "Wonderful!",
+        "You're correct!"
+    ];
+
+    const ENCOURAGING_FEEDBACK = [
+        "Good try!",
+        "Let's learn together!",
+        "Keep practicing!"
+    ];
+
+    /**
+     * ==========================================================================
+     * 2. AUDIO SYSTEM (Web Audio API Synthesizer + SpeechSynthesis)
+     * ==========================================================================
+     */
+    class SoundManager {
+        constructor() {
+            this.audioCtx = null;
+            this.bgmGain = null;
+            this.isMuted = false;
+            this.isBgmPlaying = false;
+            this.bgmTimer = null;
+            this.noteIndex = 0;
+            this.isDucked = false;
+            this.selectedVoice = null;
+
+            // Gentle, cheerful marimba-style pentatonic loop (frequencies in Hz)
+            this.melody = [
+                523.25, 659.25, 783.99, 659.25, // C5 E5 G5 E5
+                587.33, 698.46, 880.00, 698.46, // D5 F5 A5 F5
+                523.25, 659.25, 783.99, 1046.50,// C5 E5 G5 C6
+                880.00, 783.99, 659.25, 587.33  // A5 G5 E5 D5
+            ];
+
+            this.initVoices();
+        }
+
+        // Load preferred en-US voice when available
+        initVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const loadVoiceList = () => {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    this.selectedVoice =
+                        voices.find(v => v.lang === 'en-US' && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha'))) ||
+                        voices.find(v => v.lang === 'en-US') ||
+                        voices.find(v => v.lang.startsWith('en')) ||
+                        voices[0];
+                }
+            };
+            loadVoiceList();
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = loadVoiceList;
+            }
+        }
+
+        // Initialize or unlock AudioContext after first user gesture
+        unlockAudio() {
+            try {
+                if (!this.audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        this.audioCtx = new AudioContextClass();
+                        this.bgmGain = this.audioCtx.createGain();
+                        this.bgmGain.gain.value = 0.06; // ~6% gentle volume
+                        this.bgmGain.connect(this.audioCtx.destination);
+                    }
+                }
+                if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+            } catch (err) {
+                console.warn('Web Audio API unavailable:', err);
+            }
+        }
+
+        // Start cheerful background melody loop
+        startBgm() {
+            this.unlockAudio();
+            if (!this.audioCtx || this.isBgmPlaying) return;
+
+            this.isBgmPlaying = true;
+            this.noteIndex = 0;
+
+            const playNextNote = () => {
+                if (!this.isBgmPlaying) return;
+
+                if (!this.isMuted && this.audioCtx && this.audioCtx.state === 'running') {
+                    try {
+                        const now = this.audioCtx.currentTime;
+                        const osc = this.audioCtx.createOscillator();
+                        const noteEnv = this.audioCtx.createGain();
+
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(this.melody[this.noteIndex], now);
+
+                        // Soft bell-like envelope
+                        noteEnv.gain.setValueAtTime(0.001, now);
+                        noteEnv.gain.exponentialRampToValueAtTime(1.0, now + 0.04);
+                        noteEnv.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+                        osc.connect(noteEnv);
+                        noteEnv.connect(this.bgmGain);
+
+                        osc.start(now);
+                        osc.stop(now + 0.48);
+                    } catch (e) {
+                        // Ignore minor scheduling hiccups
+                    }
+                }
+
+                this.noteIndex = (this.noteIndex + 1) % this.melody.length;
+                this.bgmTimer = setTimeout(playNextNote, 520);
+            };
+
+            playNextNote();
+        }
+
+        // Temporarily lower background music during speech or SFX
+        duckBgm(shouldDuck) {
+            this.isDucked = shouldDuck;
+            if (!this.audioCtx || !this.bgmGain) return;
+            try {
+                const now = this.audioCtx.currentTime;
+                const targetGain = this.isMuted ? 0 : (shouldDuck ? 0.008 : 0.06);
+                this.bgmGain.gain.cancelScheduledValues(now);
+                this.bgmGain.gain.setTargetAtTime(targetGain, now, 0.05);
+            } catch (e) {}
+        }
+
+        toggleMute() {
+            this.isMuted = !this.isMuted;
+            this.duckBgm(this.isDucked);
+            return this.isMuted;
+        }
+
+        // High-pitched pleasant success chime
+        playCorrectSound() {
+            this.unlockAudio();
+            if (!this.audioCtx) return;
+
+            this.duckBgm(true);
+            try {
+                const now = this.audioCtx.currentTime;
+                const notes = [587.33, 880.00]; // D5 -> A5 bright interval
+
+                notes.forEach((freq, idx) => {
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.11);
+
+                    gain.gain.setValueAtTime(0.001, now + idx * 0.11);
+                    gain.gain.exponentialRampToValueAtTime(0.28, now + idx * 0.11 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+
+                    osc.start(now + idx * 0.11);
+                    osc.stop(now + idx * 0.11 + 0.38);
+                });
+            } catch (e) {}
+
+            setTimeout(() => this.duckBgm(false), 550);
+        }
+
+        // Short, gentle low-pitched buzz for incorrect choice
+        playIncorrectSound() {
+            this.unlockAudio();
+            if (!this.audioCtx) return;
+
+            this.duckBgm(true);
+            try {
+                const now = this.audioCtx.currentTime;
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(165, now);
+                osc.frequency.linearRampToValueAtTime(135, now + 0.28);
+
+                // Low-pass filter so buzz is friendly rather than harsh
+                const filter = this.audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(420, now);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.exponentialRampToValueAtTime(0.22, now + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } catch (e) {}
+
+            setTimeout(() => this.duckBgm(false), 450);
+        }
+
+        // Pronounce English food name clearly using SpeechSynthesis API
+        speakWord(word) {
+            if (!('speechSynthesis' in window)) return;
+
+            try {
+                // Cancel any active or queued speech to prevent overlap
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(word);
+                if (this.selectedVoice) {
+                    utterance.voice = this.selectedVoice;
+                }
+                utterance.lang = 'en-US';
+                utterance.rate = 0.88;  // Clear, slightly slower pace for elementary EFL learners
+                utterance.pitch = 1.05; // Friendly tone
+                utterance.volume = 1.0;
+
+                utterance.onstart = () => this.duckBgm(true);
+                utterance.onend = () => this.duckBgm(false);
+                utterance.onerror = () => this.duckBgm(false);
+
+                window.speechSynthesis.speak(utterance);
+            } catch (err) {
+                this.duckBgm(false);
+                console.warn('SpeechSynthesis failed:', err);
+            }
+        }
+    }
+
+    /**
+     * ==========================================================================
+     * 3. GAME STATE & CONTROLLER
+     * ==========================================================================
+     */
+    const state = {
+        roundQueue: [],          // 12 shuffled food objects for the current round
+        currentIndex: 0,         // Current question index (0 to 11)
+        score: 0,                // Correct answers in current round
+        isAnswered: false,       // Prevents multiple submissions per question
+        lastDisplayedFood: null, // Enforces no-back-to-back rule within and across rounds
+        currentChoices: []       // Holds the 2 category objects for the current question
+    };
+
+    const soundManager = new SoundManager();
+
+    // DOM References
+    const dom = {
+        homeScreen: document.getElementById('home-screen'),
+        gameScreen: document.getElementById('game-screen'),
+        completionScreen: document.getElementById('completion-screen'),
+        startBtn: document.getElementById('start-btn'),
+        questionCounter: document.getElementById('question-counter'),
+        scoreDisplay: document.getElementById('score-display'),
+        foodImage: document.getElementById('food-image'),
+        foodImageFallback: document.getElementById('food-image-fallback'),
+        foodName: document.getElementById('food-name'),
+        replayAudioBtn: document.getElementById('replay-audio-btn'),
+        choiceBtns: [
+            document.getElementById('choice-0'),
+            document.getElementById('choice-1')
+        ],
+        feedbackMessage: document.getElementById('feedback-message'),
+        nextBtn: document.getElementById('next-btn'),
+        finalScore: document.getElementById('final-score'),
+        completionMessage: document.getElementById('completion-message'),
+        playAgainBtn: document.getElementById('play-again-btn'),
+        fullscreenBtn: document.getElementById('fullscreen-btn'),
+        fsIconEnter: document.getElementById('fullscreen-icon-enter'),
+        fsIconExit: document.getElementById('fullscreen-icon-exit'),
+        musicToggleBtn: document.getElementById('music-toggle-btn'),
+        musicIconOn: document.getElementById('music-icon-on'),
+        musicIconOff: document.getElementById('music-icon-off')
+    };
+
+    /**
+     * ==========================================================================
+     * 4. RANDOMIZATION & NO BACK-TO-BACK REPETITION LOGIC
+     * ==========================================================================
+     */
+    function shuffleArray(array) {
+        const copy = [...array];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    }
+
+    /**
+     * Generates a valid 12-item round queue where:
+     * 1. Every food appears once per round.
+     * 2. No two consecutive questions have the same food.
+     * 3. The first item of a new round is strictly different from `previousLastFoodName`.
+     */
+    function generateValidRoundQueue(previousLastFoodName) {
+        let candidate = [];
+        let isValid = false;
+        let attempts = 0;
+
+        while (!isValid && attempts < 200) {
+            attempts++;
+            candidate = shuffleArray(FOOD_ITEMS);
+
+            // Check cross-round boundary condition
+            if (previousLastFoodName && candidate[0].name === previousLastFoodName) {
+                continue;
+            }
+
+            // Check intra-round consecutive duplicates
+            let hasAdjacentDuplicate = false;
+            for (let i = 1; i < candidate.length; i++) {
+                if (candidate[i].name === candidate[i - 1].name) {
+                    hasAdjacentDuplicate = true;
+                    break;
+                }
+            }
+
+            if (!hasAdjacentDuplicate) {
+                isValid = true;
+            }
+        }
+
+        // Deterministic fallback if shuffle ever needed adjustment
+        if (!isValid && previousLastFoodName && candidate[0].name === previousLastFoodName) {
+            const first = candidate.shift();
+            candidate.push(first);
+        }
+
+        return candidate;
+    }
+
+    /**
+     * Generates 2 randomized answer choices:
+     * - 1 Correct Food Group
+     * - 1 Randomly selected Incorrect Food Group from the remaining 5
+     * - Randomized Left/Right button placement
+     */
+    function generateTwoChoices(correctCategoryId) {
+        const correctCat = FOOD_CATEGORIES.find(c => c.id === correctCategoryId);
+        const incorrectPool = FOOD_CATEGORIES.filter(c => c.id !== correctCategoryId);
+        const randomIncorrect = incorrectPool[Math.floor(Math.random() * incorrectPool.length)];
+
+        // Randomize order (50% chance left, 50% chance right)
+        return Math.random() < 0.5
+            ? [correctCat, randomIncorrect]
+            : [randomIncorrect, correctCat];
+    }
+
+    /**
+     * ==========================================================================
+     * 5. GAMEPLAY PROGRESSION & RENDERING FUNCTIONS
+     * ==========================================================================
+     */
+    function switchScreen(targetScreen) {
+        dom.homeScreen.classList.add('hidden');
+        dom.gameScreen.classList.add('hidden');
+        dom.completionScreen.classList.add('hidden');
+
+        targetScreen.classList.remove('hidden');
+    }
+
+    function startNewRound() {
+        state.score = 0;
+        state.currentIndex = 0;
+        state.isAnswered = false;
+        state.roundQueue = generateValidRoundQueue(state.lastDisplayedFood);
+
+        updateHud();
+        switchScreen(dom.gameScreen);
+        renderCurrentQuestion();
+    }
+
+    function updateHud() {
+        const total = state.roundQueue.length;
+        const currentNum = Math.min(state.currentIndex + 1, total);
+        dom.questionCounter.textContent = `Question ${currentNum}/${total}`;
+        dom.scoreDisplay.textContent = `Score: ${state.score}`;
+    }
+
+    function renderCurrentQuestion() {
+        const currentFood = state.roundQueue[state.currentIndex];
+
+        // Extra safety guard against back-to-back repetition
+        if (state.lastDisplayedFood === currentFood.name && state.currentIndex + 1 < state.roundQueue.length) {
+            const swapItem = state.roundQueue[state.currentIndex + 1];
+            state.roundQueue[state.currentIndex + 1] = currentFood;
+            state.roundQueue[state.currentIndex] = swapItem;
+        }
+
+        const activeFood = state.roundQueue[state.currentIndex];
+        state.lastDisplayedFood = activeFood.name;
+        state.isAnswered = false;
+
+        updateHud();
+
+        // Reset Feedback & Next Button
+        dom.feedbackMessage.className = 'feedback-message';
+        dom.feedbackMessage.textContent = '';
+        dom.nextBtn.classList.add('hidden');
+
+        // Render Food Picture with Graceful Fallback
+        dom.foodImage.style.display = 'block';
+        dom.foodImageFallback.style.display = 'none';
+        dom.foodImage.classList.remove('pop');
+        void dom.foodImage.offsetWidth; // Trigger reflow for animation
+        dom.foodImage.classList.add('pop');
+        dom.foodImage.src = activeFood.image;
+        dom.foodImage.alt = activeFood.name;
+
+        dom.foodImage.onerror = () => {
+            dom.foodImage.style.display = 'none';
+            dom.foodImageFallback.style.display = 'flex';
+            dom.foodImageFallback.textContent = `[Image: ${activeFood.image}]`;
+        };
+
+        // Render Food Vocabulary Word
+        dom.foodName.textContent = activeFood.name;
+
+        // Generate & Render Two Answer Buttons
+        state.currentChoices = generateTwoChoices(activeFood.categoryId);
+
+        dom.choiceBtns.forEach((btn, idx) => {
+            const cat = state.currentChoices[idx];
+            btn.disabled = false;
+            btn.className = 'choice-btn';
+            btn.querySelector('.choice-en').textContent = cat.en;
+            btn.querySelector('.choice-zh').textContent = cat.zh;
+        });
+
+        // Automatically pronounce the English food name
+        setTimeout(() => {
+            soundManager.speakWord(activeFood.name);
+        }, 180);
+    }
+
+    function handleAnswerSelection(selectedIndex) {
+        // Prevent duplicate submissions
+        if (state.isAnswered) return;
+        state.isAnswered = true;
+
+        const activeFood = state.roundQueue[state.currentIndex];
+        const selectedCategory = state.currentChoices[selectedIndex];
+        const isCorrect = selectedCategory.id === activeFood.categoryId;
+
+        // Disable both buttons immediately
+        dom.choiceBtns.forEach((btn, idx) => {
+            btn.disabled = true;
+            const cat = state.currentChoices[idx];
+
+            if (cat.id === activeFood.categoryId) {
+                // Always highlight the correct answer in GREEN
+                btn.classList.add('correct');
+            } else if (idx === selectedIndex && !isCorrect) {
+                // Highlight student's wrong pick in RED
+                btn.classList.add('incorrect');
+            } else {
+                btn.classList.add('dimmed');
+            }
+        });
+
+        // Update Score, Play Sound, and Show Encouraging Feedback
+        if (isCorrect) {
+            state.score += 1;
+            updateHud();
+            soundManager.playCorrectSound();
+
+            const msg = POSITIVE_FEEDBACK[Math.floor(Math.random() * POSITIVE_FEEDBACK.length)];
+            dom.feedbackMessage.textContent = `${msg} (${selectedCategory.en} ${selectedCategory.zh})`;
+            dom.feedbackMessage.className = 'feedback-message visible is-correct';
+        } else {
+            soundManager.playIncorrectSound();
+
+            const correctCat = FOOD_CATEGORIES.find(c => c.id === activeFood.categoryId);
+            const msg = ENCOURAGING_FEEDBACK[Math.floor(Math.random() * ENCOURAGING_FEEDBACK.length)];
+            dom.feedbackMessage.textContent = `${msg} Answer: ${correctCat.en} ${correctCat.zh}`;
+            dom.feedbackMessage.className = 'feedback-message visible is-incorrect';
+        }
+
+        // Reveal Next Button (Student advances at their own pace)
+        dom.nextBtn.classList.remove('hidden');
+    }
+
+    function handleNextQuestion() {
+        state.currentIndex += 1;
+
+        if (state.currentIndex < state.roundQueue.length) {
+            renderCurrentQuestion();
+        } else {
+            showCompletionScreen();
+        }
+    }
+
+    function showCompletionScreen() {
+        const total = state.roundQueue.length;
+        dom.finalScore.textContent = state.score;
+
+        if (state.score === total) {
+            dom.completionMessage.textContent = "Perfect Score! You are a Food Group Master!";
+        } else if (state.score >= 9) {
+            dom.completionMessage.textContent = "Awesome work! You know your food groups very well!";
+        } else if (state.score >= 6) {
+            dom.completionMessage.textContent = "Good job! Keep practicing to get even higher!";
+        } else {
+            dom.completionMessage.textContent = "Nice effort! Let's play again and learn more!";
+        }
+
+        // Show completion overlay over the game screen
+        dom.completionScreen.classList.remove('hidden');
+    }
+
+    /**
+     * ==========================================================================
+     * 6. FULLSCREEN & EVENT LISTENERS
+     * ==========================================================================
+     */
+    function toggleFullscreen() {
+        const docEl = document.documentElement;
+        const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+
+        if (!isFullscreen) {
+            if (docEl.requestFullscreen) {
+                docEl.requestFullscreen().catch(() => {});
+            } else if (docEl.webkitRequestFullscreen) {
+                docEl.webkitRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    }
+
+    function updateFullscreenIcon() {
+        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        dom.fsIconEnter.style.display = isFullscreen ? 'none' : 'block';
+        dom.fsIconExit.style.display = isFullscreen ? 'block' : 'none';
+    }
+
+    // Start Game Button (Home Screen)
+    dom.startBtn.addEventListener('click', () => {
+        soundManager.unlockAudio();
+        soundManager.startBgm();
+        startNewRound();
+    });
+
+    // Replay Food Pronunciation Button
+    dom.replayAudioBtn.addEventListener('click', () => {
+        const currentFood = state.roundQueue[state.currentIndex];
+        if (currentFood) {
+            soundManager.unlockAudio();
+            soundManager.speakWord(currentFood.name);
+        }
+    });
+
+    // Answer Choice Buttons
+    dom.choiceBtns.forEach((btn, idx) => {
+        btn.addEventListener('click', () => handleAnswerSelection(idx));
+    });
+
+    // Next Question Button
+    dom.nextBtn.addEventListener('click', handleNextQuestion);
+
+    // Play Again Button (Completion Screen)
+    dom.playAgainBtn.addEventListener('click', () => {
+        soundManager.unlockAudio();
+        startNewRound();
+    });
+
+    // Fullscreen Button & Events
+    dom.fullscreenBtn.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', updateFullscreenIcon);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+
+    // Background Music Mute/Unmute Toggle
+    dom.musicToggleBtn.addEventListener('click', () => {
+        soundManager.unlockAudio();
+        const muted = soundManager.toggleMute();
+        dom.musicIconOn.style.display = muted ? 'none' : 'block';
+        dom.musicIconOff.style.display = muted ? 'block' : 'none';
+    });
+</script>
+</body>
+</html>
